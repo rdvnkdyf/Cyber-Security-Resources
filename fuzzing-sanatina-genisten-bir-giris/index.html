@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>reveal.js – The HTML Presentation Framework</title>
+
+    <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+    <meta name="author" content="Hakim El Hattab">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="dist/reset.css">
+    <link rel="stylesheet" href="dist/reveal.css">
+    <link rel="stylesheet" href="dist/theme/black-custom.css" id="theme">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="plugin/highlight/monokai.css" id="highlight-theme">
+
+    <!-- toc progress plugin -->
+    <link rel="stylesheet" href="plugin/toc-progress/toc-progress.css">
+
+</head>
+
+<body>
+    <div class="reveal">
+        <div style="position:absolute; color:white; bottom: 20px; left: 10px; font-family: monospace; font-size: 0.4em; color: orange;">
+            λ<sup>0</sup>
+        </div>
+
+        <!-- Any section element inside of this container is displayed as a slide -->
+        <div class="slides">
+
+            <section data-state="no-toc-progress" data-background-color="black">
+                    .
+            </section>
+
+            <!-- Kapak -->
+            <section data-state="no-toc-progress" data-background="assets/AFL_Fuzz_Logo.gif" data-background-size="40%" data-background-color="white" data-background-repeat="repeat">
+                <h2 class="no-toc-progress" style="color:black;">Fuzzing Sanatına Genişten Bir Giriş
+                    </h1>
+                    <p>
+                        <small style="color:black;">Dünü, Bugünü, Yarını</small>
+                    </p>
+                    <p>
+                        <a style="color:purple;" href="mailto:serdok at protonmail nokta com">serdok at protonmail nokta com</a>
+                    </p>
+            </section>
+
+
+            <section>
+                <section>
+                    <h2>İçindekiler</h2>
+                    <ol>
+                           <li>Fuzzing/fuzz testing nedir?</li>
+                           <li>Kavramlar</li>
+                           <li>Fuzzer sınıflandırması</li>
+                           <li>Yaygın fuzzer teknikleri</li>
+                           <li>Bazı meşhur fuzzerlar</li>
+                           <li>Revaçtaki fuzzing konuları</li>
+                           <li>Fuzzing'in geleceği</li>
+
+                    </ol>
+                </section>
+            </section>
+
+            <section data-state="no-toc-progress" data-background-color="black">
+                    <h3>Uyarı</h3>
+                    <p>Kavram Türkçe'leştirmelerinde kullanılan kelimeler sunucunun kendi seçimleridir.</p>
+                    <br>
+                    <br>
+                    <br>
+                    <h5>Sunum lisansı</h5>
+                    <img src="assets/ccbysa.png">
+            </section>
+
+            <!-- Fuzzing nedir -->
+            <section>
+                <section>
+                    <h2>Fuzzing/fuzz testing nedir?</h2>
+                    <ul>
+                        <li>Yaklaşık çeviri: <em>"Bulandırmak"</em></li>
+                        <li>Programa rastgele(msi) girdiler yollayıp çökmesini beklemek</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Örnek</h3>
+                    <pre data-id="code"><code class="python" data-trim><script type="text/template">
+
+                                    while true:
+                                        input = generate_input()
+                                        result = run("target.exe", input)
+                                        if result == crash:
+                                            save(result)
+
+                                </script></code></pre>
+                </section>
+                <section>
+                    <h3>Tarihi</h3>
+                    <ul>
+                        <li>Wisconsin Üni. CS736 dersinin sınıf projesi (1988, Prof. Barton Miller)</li>
+                        <li><b>Sonuç</b>: Test edilen UNIX komut satırı programlarında %25-33 oranında çökmeler</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Kullanım alanları</h3>
+                    <ul>
+                        <li>Otomatize yazılım testi</li>
+                        <li>Otomatize zero-day keşfi</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>İşe yaradığı durumlar</h3>
+                    <ul>
+                        <li>Genellikle işlenen (parsing) bir girdi olduğunda</li>
+                        <li>Karmaşık protokollerin testlerinde</li>
+                        <li>Statik analizin zor olduğu büyük projelerde</li>
+                        <li>Fuzzer yüzü görmemiş projelerde</li>
+                    </ul>
+
+                    <blockquote cite="https://google.github.io/oss-fuzz/">
+                        "As of January 2021, OSS-Fuzz has found over 25,000 bugs in 375 open source projects." (Başlangıç: 2016 Aralık)
+                    </blockquote>
+                </section>
+                <section>
+                    <h3>Zayıf kaldığı durumlar</h3>
+                    <ul>
+                        <li>Program akışında ulaşılmaşı zor yollar (path) varsa</li>
+                        <li>Statik analize karşı hâlâ zayıf:</li>
+                    </ul>
+                    <blockquote cite="https://googleprojectzero.blogspot.com/2020/12/an-ios-zero-click-radio-proximity.html">
+                        "Fuzzing is often misunderstood as an effective method to discover easy-to-find vulnerabilities or 'low-hanging fruit'. A more precise description would be that fuzzing is an effective method to discover easy-to-fuzz vulnerabilities...
+                    </blockquote>
+                </section>
+                <section>
+                    <h3>Zayıf kaldığı durumlar (devam)</h3>
+                    <blockquote cite="https://googleprojectzero.blogspot.com/2020/12/an-ios-zero-click-radio-proximity.html">
+                        ... Plenty of vulnerabilities which a skilled vulnerability researcher would consider low-hanging fruit can require reaching a program point that no fuzzer today will be able to reach, no matter the compute resources used." - Ian Beer, An iOS zero-click radio proximity exploit odyssey, gp0
+                    </blockquote>
+                </section>
+                <section>
+                    <h3>Akademideki yeri</h3>
+                    <ul>
+                        <li>Zafiyet analizi alanının en fazla bilimsel bakış gerektiren konularından biri</li>
+                        <li>Akademiden çıkma çok hoş fuzzerlar var</li>
+                    </ul>
+                </section>
+                <section data-background-iframe="https://web.archive.org/web/20210125173939/https://www.usenix.org/publications/proceedings/fuzzing" data-background-interactive>
+                    <div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.9); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
+                        <h2>USENIX</h2>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Kavramlar-->
+            <section>
+                <section>
+                    <h2>Kavramlar</h2>
+                    <p>(afl terminolojisi, yaygın kullanılıyor)</p>
+                </section>
+                <section>
+                    <h3>Corpus</h3>
+                    <p><em>Külliyat</em></p>
+                    <ul>
+                        <li><b>Ör:</b> Program akışında farklı yolları tetikleyecek, çeşitli mp3 dosyaları</li>
+                    </ul>
+                    <img src="assets/corpus.png" width="40%">
+                </section>
+                <section>
+                    <h3>Harness</h3>
+                    <p><em>Koşum takımı</em></p>
+                    <ul>
+                        <li><b>Ör:</b>Fuzzlanacak fonksiyonu çağıran bir "main.c"</li>
+                    </ul>
+                    <pre data-id="code"><code class="C" data-trim><script type="text/template">
+
+                                                        #include "mp3parser.h"
+
+                                                        int main(int argc, char **argv)
+                                                        {
+                                                                init_mp3_parser();
+                                                                int ret = parse_mp3(argv[1]);
+                                                                return ret;
+                                                        }
+
+                                                </script></code></pre>
+                </section>
+                <section>
+                    <h3>Bug oracle</h3>
+                    <p><em>Kahin</em></li>
+                        <ul>
+                            <li>Çökme/hata tespit mekanizması</li>
+                            <li><b>Ör:</b> unix signal'leri, core dump, return code, cihazın kapanması (1-bit), sanitizer'lar...</li>
+                        </ul>
+                        <img src="assets/asan.jpg" width="60%">
+                        <!-- https://dev.to/loderunner/writing-safer-c-with-clang-address-sanitizer -->
+                </section>
+                <section>
+                    <h3>Coverage</h3>
+                    <p><em>Kapsam</em></p>
+                    <ul>
+                        <li>"Bu girdi kodun ne kadarını çalıştırıyor?"</li>
+                        <li>Ölçü birimleri: <em>Satır, fonksiyon, basic block, edge, instruction vs...</em>
+                    </ul>
+                    <img src="assets/coverage.png" width="60%">
+                    <!-- https://github.com/gaasedelen/lighthouse -->
+                </section>
+                <section>
+                    <h3>Mutator</h3>
+                    <p><em>Evirici</em></p>
+                    <ul>
+                        <li>Girdiyi evirip çeviren motor</li>
+                        <li>Mesela kapsam (coverage) bilgisine göre (coverage-guided)</li>
+                    </ul>
+                    <img src="assets/AFL_Fuzz_Logo.gif">
+                </section>
+                <section>
+                    <h3>Power schedule</h3>
+                    <p><em>Güç planı</em></p>
+                    <ul>
+                        <li><em>"Şimdi girdiyi hangi algoritma ile evirsek?"</em></li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Fuzzer türleri-->
+            <section>
+                <section>
+                    <h2>Fuzzer sınıflandırması</h2>
+                </section>
+                <section>
+                    <h3>Blackbox</h3>
+                    <ul>
+                        <li>Sadece girdi/çıktıya bakarak harekata yön veren fuzzer</li>
+                        <li>Çok akıllı olmaları zor (programın içinden habersiz)</li>
+                        <li>Kaynak kodu yokken ya da hedef kontrol altında değilken</li>
+                        <li>Muhtemelen çok hızlı</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Whitebox</h3>
+                    <ul>
+                        <li>Tamamen programın iç yapısına (kaynak koduna) göre hareket eden fuzzer</li>
+                        <li>symbolic execution + concrete execution = concolic execution</li>
+                        <li>Ağır iş yükü (semboller)</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Greybox</h3>
+                    <ul>
+                        <li>Hedefi önce teçhiz edip (instrumentation) sonra fuzzlamak</li>
+                        <li>Binary ya da kaynak kodu teçhiz edilebilir</li>
+                        <li><b>Ör teçhizat:</b><em> Program akışında kapsam (coverage) bilgisi döndürecek kodlar sıkıştırmak</em></li>
+                        <li>En sık kullanılan yaklaşım (f/p)</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Fuzzer teknikleri -->
+            <section>
+                <section data-state="no-toc-progress">
+                    <h2 class="no-toc-progress">Yaygın fuzzer teknikleri</h2>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <h2>Teçhizat teknikleri</h2>
+                    <p><em>Instrumentation</em></p>
+                </section>
+                <section data-background="assets/gcc.png">
+                    <h3>Derleme zamanı (statik) teçhizat</h3>
+                    <ul>
+                        <li>Her "basic block"a kapsam (coverage) sayacı arttıracak bir kod sıkıştırmak</li>
+                        <li>Kütüphaneler de teçhizatlanmalı</li>
+                        <li>Ör: afl (gcc yaması)</li>
+                    </ul>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-background="assets/asil-kod.png" class="no-toc-progress" data-background-size="40%" data-background-color="black">
+                    <div style="position: absolute; width: 20%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(255, 0, 0, 0.3); color: #fff; padding: 10px; font-size: 10px; text-align: left;">
+                        <h2>Kodumuz</h2>
+                    </div>
+                </section>
+                <section data-background="assets/aflsiz-decompilation.png" class="no-toc-progress" data-background-size="60%" data-background-color="black">
+                    <div style="position: absolute; width: 20%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(255, 0, 0, 0.3); color: #fff; padding: 10px; font-size: 10px; text-align: left;">
+                        <h2>gcc ile derleyince decompilation</h2>
+                    </div>
+                </section>
+                <section data-background="assets/affli-decompilation.png" class="no-toc-progress" data-background-size="80%" data-background-color="black">
+                    <div style="position: absolute; width: 20%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(255, 0, 0, 0.3); color: #fff; padding: 10px; font-size: 10px; text-align: left;">
+                        <h2>afl-gcc ile derleyince decompilation</h2>
+                    </div>
+                </section>
+                <section data-background="assets/afl-instrumentation-yokken.png" class="no-toc-progress" data-background-size="90%" data-background-color="black">
+                    <div style="position: absolute; width: 20%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(255, 0, 0, 0.3); color: #fff; padding: 10px; font-size: 10px; text-align: left;">
+                        <h2>gcc ile derleyince basic-block'lar</h2>
+                    </div>
+                </section>
+                <section data-background="assets/afl-instrumentation.png" class="no-toc-progress" data-background-size="90%" data-background-color="black">
+                    <div style="position: absolute; width: 20%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(255, 0, 0, 0.3); color: #fff; padding: 10px; font-size: 10px; text-align: left;">
+                        <h2>afl-gcc ile derleyince basic-block'lar</h2>
+                </section>
+                <section data-background="assets/afl-instrumentation-2.png" class="no-toc-progress" data-background-size="90%" data-background-color="black">
+                    <div style="position: absolute; width: 20%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(255, 0, 0, 0.3); color: #fff; padding: 10px; font-size: 10px; text-align: left;">
+                        <h2>teçhiz (instrumention) edilmiş yerler</h2>
+                </section>
+                <section>
+                    <h3>Çalışma zamanı (dinamik) teçhizat</h3>
+                    <ul>
+                        <li>Kaynak kodu yoksa</li>
+                        <li><b>Ör:</b> afl qemu mode, Valgrind, Pin, DynamoRIO, DnyInst</li>
+                    </ul>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <h2>Hız kazanma teknikleri</h2>
+                </section>
+                <section>
+                    <h3>Bellekte fuzzlamak</h3>
+                    <p><em>(In-memory fuzzing)</em></p>
+                    <ul>
+                        <li>Amaç programın başlangıç maliyetini kısmak</li>
+                    </ul>
+                    <br>
+                    <br>
+                    <ol>
+                        <li>Programı çalıştır</li>
+                        <li>Girdi almadan hemen önce bellek durumunu kaydet</li>
+                        <li>Girdiyi belleğe yaz ve çalıştır</li>
+                        <li>Belleği eski konumuna getir</li>
+                        <li>3. adıma zıpla</li>
+                    </ol>
+                    <aside class="notes">
+                        in memory: snapshot based fuzzing <br>
+                    </aside>
+                </section>
+                <section>
+                    <h3>Fork-server</h3>
+                    <ul>
+                        <li>Amaç programın başlangıç maliyetini kısmak</li>
+                        <li>Programın başlangıç kısmı ortak olduğu için oradan sonra forklamak ve forkları fuzzlamak </li>
+                    </ul>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate>
+                    <h3>Kalıcı fuzzlamak</h3>
+                    <p><em>(persistent mode)</em></p>
+                    <pre data-id="code-animation"><code class="C" data-trim data-line-numbers><script type="text/template">
+
+                                                        #include "mp3parser.h"
+
+                                                        int main(int argc, char **argv)
+                                                        {
+                                                                init_mp3_parser();
+                                                                int ret = parse_mp3(argv[1]);
+                                                                return ret;
+                                                        }
+
+                                                </script></code></pre>
+                    <ul>
+                        <li>afl'in bir özelliği</li>
+                        <li>Kodun bir kısmını döngü içinde fuzzlamak</li>
+                        <li>Yan etkileri olabilir</li>
+                    </ul>
+                    <aside class="notes">
+                        persistent mode: kodun bir yerini loop'ta fuzzlamak <br> yan etki mesela tekrarlanamayan bir UAF<br>
+                    </aside>
+                </section>
+                <section data-auto-animate>
+                    <h3>Kalıcı fuzzlamak</h3>
+                    <p><em>(persistent mode)</em></p>
+                    <pre data-id="code-animation"><code class="C" data-trim data-line-numbers><script type="text/template">
+
+                                                        #include "mp3parser.h"
+
+                                                        int main(int argc, char **argv)
+                                                        {
+                                                                init_mp3_parser();
+                                                                while (__AFL_LOOP(1000)) {
+                                                                        int ret = parse_mp3(argv[1]);
+                                                                }
+                                                                return ret;
+                                                        }
+
+                                                </script></code></pre>
+                    <ul>
+                        <li>afl'in bir özelliği</li>
+                        <li>Kodun bir kısmını döngü içinde fuzzlamak</li>
+                        <li>Yan etkileri olabilir</li>
+                    </ul>
+                    <aside class="notes">
+                        persistent mode: kodun bir yerini loop'ta fuzzlamak <br> yan etki mesela tekrarlanamayan bir UAF<br>
+                    </aside>
+                </section>
+                <section data-auto-animate>
+                    <h3>Kalıcı fuzzlamak</h3>
+                    <p><em>(persistent mode)</em></p>
+                    <pre data-id="code-animation"><code class="C" data-trim data-line-numbers><script type="text/template">
+
+                                                        #include "mp3parser.h"
+
+                                                        int main(int argc, char **argv)
+                                                        {
+                                                                while (__AFL_LOOP(1000)) {
+                                                                        init_mp3_parser();
+                                                                        int ret = parse_mp3(argv[1]);
+                                                                }
+                                                                return ret;
+                                                        }
+
+                                                </script></code></pre>
+                    <ul>
+                        <li>afl'in bir özelliği</li>
+                        <li>Kodun bir kısmını döngü içinde fuzzlamak</li>
+                        <li>Yan etkileri olabilir</li>
+                    </ul>
+                    <aside class="notes">
+                        persistent mode: kodun bir yerini loop'ta fuzzlamak <br> yan etki mesela tekrarlanamayan bir UAF<br>
+                    </aside>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <h2>Girdi seçimi ve kırpma teknikleri</h2>
+                    <p><em>Seed selection/Seed trimming</em></p>
+                    <aside class="notes">
+                        <li>Süreyi azaltmak için girdiyi akıllıca seçmek lazım. </li>
+                        <li>Miller ’s report [158],which showed that a 1% increase in code coverage increasedthe percentage of bugs found by .92%</li>
+                    </aside>
+                </section>
+                <section>
+                    <h3>Minset yöntemi</h3>
+                    <ul>
+                        <li>En fazla kapsam (coverage) verecek en küçük kümeyi seçme</li>
+                        <li>Genelde fuzzinge başlamadan yapılır</li>
+                    </ul>
+                    <aside class="notes">
+                        <li>Süreyi azaltmak için girdiyi akıllıca seçmek lazım. </li>
+                        <li>Miller ’s report [158],which showed that a 1% increase in code coverage increasedthe percentage of bugs found by .92%</li>
+                    </aside>
+                </section>
+                <section>
+                    <h3>Tekrarlı kırpma</h3>
+                    <ul>
+                        <li>Belirli bir girdi aynı kapsama sebep olduğu sürece bir kısmını kırpıp boyutunu küçültmek</li>
+                        <li>Çökmeye sebep olduysa, debuggingi basitleştirmek için yapılabilir</li>
+                    </ul>
+                    <aside class="notes">
+                        <li>Süreyi azaltmak için girdiyi akıllıca seçmek lazım. </li>
+                        <li>Miller ’s report [158],which showed that a 1% increase in code coverage increasedthe percentage of bugs found by .92%</li>
+                    </aside>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <h2>Girdi üretme teknikleri</h2>
+                    <p><em>Input generation</em></p>
+                    <aside class="notes">
+                        Modelsiz ve modelli üretme tekniklerine bakacağız
+                    </aside>
+                </section>
+                <section>
+                    <h3>Rastgele</h3>
+                    <ul>
+                        <li>Bağlamsız, tamamen rastgele</li>
+                        <li>Hedef çok kırılgansa bu bile işe yarayabilir</li>
+                    </ul>
+                    <pre data-id="code-animation"><code class="sh" data-trim><script type="text/template">
+
+                                                        $ ./hedef < /dev/urandom
+                                                        Segmentation fault (core dumped)
+
+                                                </script></code></pre>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate>
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li>Bit çevirme (<em>bit flipping</em>)</li>
+                        <li>Aritmetik mutasyonlar</li>
+                        <li>Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li>Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li><b>Bit çevirme (<em>bit flipping</em>)</b></li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        110101011101001010101011010 b
+                    </p>
+                    <aside class="notes">
+                        Bir ya da birden çok biti çevirmek
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li><b>Bit çevirme (<em>bit flipping</em>)</b></li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        110101011111001010101011010 b
+                    </p>
+                    <aside class="notes">
+                        Bir ya da birden çok biti çevirmek
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li><b>Bit çevirme (<em>bit flipping</em>)</b></li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        010101011111001010101011010 b
+                    </p>
+                    <aside class="notes">
+                        Bir ya da birden çok biti çevirmek
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li><b>Bit çevirme (<em>bit flipping</em>)</b></li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        010101011111001010101011110 b
+                    </p>
+                    <aside class="notes">
+                        Bir ya da birden çok biti çevirmek
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li><b>Bit çevirme (<em>bit flipping</em>)</b></li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        010101111011101000101111110 b
+                    </p>
+                    <aside class="notes">
+                        Bir ya da birden çok biti çevirmek
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li><b>Bit çevirme (<em>bit flipping</em>)</b></li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        111001011011101000101111110 b
+                    </p>
+                    <aside class="notes">
+                        Bir ya da birden çok biti çevirmek
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li><b>Aritmetik mutasyonlar</b></li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1df532c2d1ee1e3 h
+                    </p>
+                    <aside class="notes">
+                        Mesela rastgele 4 byte'lık bir yeri int olarak değerlendirip rastgele bir sayıyla 4 işlem uygulamak
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li><b>Aritmetik mutasyonlar</b></li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1df<b style="color:cyan;">532c2d1e</b>e1e3 h
+                    </p>
+                    <aside class="notes">
+                        Mesela rastgele 4 byte'lık bir yeri int olarak değerlendirip rastgele bir sayıyla 4 işlem uygulamak
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li><b>Aritmetik mutasyonlar</b></li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1df<b style="color:cyan;">532c2d1e</b>e1e3 h <br> &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp + - * / <br> &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp rand()%35
+                    </p>
+                    <aside class="notes">
+                        Mesela rastgele 4 byte'lık bir yeri int olarak değerlendirip rastgele bir sayıyla 4 işlem uygulamak
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li><b>Aritmetik mutasyonlar</b></li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1df<b style="color:cyan;">19fdce15</b>e1e3 h <br>
+                    </p>
+                    <aside class="notes">
+                        Mesela rastgele 4 byte'lık bir yeri int olarak değerlendirip rastgele bir sayıyla 4 işlem uygulamak
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li><b>Büyük parça mutasyonu (<em>block-based</em>)</b></li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1df19fdce15e1e3 h
+                    </p>
+                    <aside class="notes">
+                        rastgele bir yere rastgele bir blok veri eklemek <br> rastgele bir yerden rastgele bir blok silmek <br> rastele seçilen bir bloku rastgele bir blokla değiştirmek <br> rastgele blokların yerlerini karıştırmak <br> vs... <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li><b>Büyük parça mutasyonu (<em>block-based</em>)</b></li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1df19fd<b style="color:green;">de4dbe3f</b>ce15e1e3 h
+                    </p>
+                    <aside class="notes">
+                        rastgele bir yere rastgele bir blok veri eklemek <br> rastgele bir yerden rastgele bir blok silmek <br> rastele seçilen bir bloku rastgele bir blokla değiştirmek <br> rastgele blokların yerlerini karıştırmak <br> vs... <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li><b>Büyük parça mutasyonu (<em>block-based</em>)</b></li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1<b style="color:red;">df19</b>fdde4dbe3fce15e1e3 h
+                    </p>
+                    <aside class="notes">
+                        rastgele bir yere rastgele bir blok veri eklemek <br> rastgele bir yerden rastgele bir blok silmek <br> rastele seçilen bir bloku rastgele bir blokla değiştirmek <br> rastgele blokların yerlerini karıştırmak <br> vs... <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li><b>Büyük parça mutasyonu (<em>block-based</em>)</b></li>
+                        <li style="opacity:0.5;">Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</li>
+                    </ul>
+                    <p data-id="code-animation">
+                        91a39b93324e1fdde4dbe3fce15e1e3 h
+                    </p>
+                    <aside class="notes">
+                        rastgele bir yere rastgele bir blok veri eklemek <br> rastgele bir yerden rastgele bir blok silmek <br> rastele seçilen bir bloku rastgele bir blokla değiştirmek <br> rastgele blokların yerlerini karıştırmak <br> vs... <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li><b>Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</b></li>
+                    </ul>
+                    <pre data-id="code"><code class="python" data-trim>
+
+                                                  csv.dict
+                                                ┌─┬────────┐
+                                                │1│ "\x00" │
+                                                │2│ "\r\n" │
+                                                │3│ ";;"   │        91a39b93324e1fdde4dbe3fce15e1e3 h
+                                                │4│ ",,"   │                
+                                                │5│ "\t;"  │
+                                                │6│ "\n;"  │
+                                                └─┴────────┘
+                                                </code></pre>
+                    <aside class="notes">
+                        Önceden bir listede vs. fuzzlanan fonksiyon için özel anlam taşıyan belirteçleri biriktirmek <br> fuzzer bunları ekler, çıkarır vs. bu sayede girdimiz daha geçerli olur <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li><b>Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</b></li>
+                    </ul>
+                    <pre data-id="code"><code class="python" data-trim>
+
+                                                  csv.dict
+                                                ┌─┬────────┐
+                                                │1│ "\x00" │
+                                                │2│ "\r\n" │
+                                                │3│ ";;"   │        9109a39b93324e1fdde4dbe3fce15e1e3 h
+                                                │4│ ",,"   │          \t      
+                                                │5│ "\t;"  │
+                                                │6│ "\n;"  │
+                                                └─┴────────┘
+                                                </code></pre>
+                    <aside class="notes">
+                        Önceden bir listede vs. fuzzlanan fonksiyon için özel anlam taşıyan belirteçleri biriktirmek <br> fuzzer bunları ekler, çıkarır vs. bu sayede girdimiz daha geçerli olur <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li><b>Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</b></li>
+                    </ul>
+                    <pre data-id="code"><code class="python" data-trim>
+
+                                                  csv.dict
+                                                ┌─┬────────┐
+                                                │1│ "\x00" │
+                                                │2│ "\r\n" │
+                                                │3│ ";;"   │        9109a39b93324e1fdde4d0d0abe3fce15e1e3 h
+                                                │4│ ",,"   │          \t                 \r\n
+                                                │5│ "\t;"  │
+                                                │6│ "\n;"  │
+                                                └─┴────────┘
+                                                </code></pre>
+                    <aside class="notes">
+                        Önceden bir listede vs. fuzzlanan fonksiyon için özel anlam taşıyan belirteçleri biriktirmek <br> fuzzer bunları ekler, çıkarır vs. bu sayede girdimiz daha geçerli olur <br>
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Modelsiz girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından habersiz</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Bit çevirme (<em>bit flipping</em>)</li>
+                        <li style="opacity:0.5;">Aritmetik mutasyonlar</li>
+                        <li style="opacity:0.5;">Büyük parça mutasyonu (<em>block-based</em>)</li>
+                        <li><b>Sözlük tabanlı mutasyon (<em>dictionary-based</em>)</b></li>
+                    </ul>
+                    <pre data-id="code"><code class="python" data-trim>
+
+                                                  csv.dict
+                                                ┌─┬────────┐
+                                                │1│ "\x00" │
+                                                │2│ "\r\n" │
+                                                │3│ ";;"   │        9109a39b2c2c4e1fdde4d0d0abe3fce15e1e3 h
+                                                │4│ ",,"   │          \t     , ,         \r\n
+                                                │5│ "\t;"  │
+                                                │6│ "\n;"  │
+                                                └─┴────────┘
+                                                </code></pre>
+                    <aside class="notes">
+                        Önceden bir listede vs. fuzzlanan fonksiyon için özel anlam taşıyan belirteçleri biriktirmek <br> fuzzer bunları ekler, çıkarır vs. bu sayede girdimiz daha geçerli olur <br>
+                    </aside>
+                </section>
+                <section data-auto-animate>
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <p><b>Amaç:</b> Girdinin anlamsızlığını azaltarak daha çok yol keşfetmek/fuzzlamak
+                        </>
+                        <ul>
+                            <li>Önceden tanımlı model kullanan fuzzer</li>
+                            <li>Modeli kendisi keşfeden fuzzer</li>
+                            <li>Encoder'ı eviren fuzzer</li>
+                        </ul>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li><b>Önceden tanımlı model kullanan fuzzer</b></li>
+                        <li style="opacity:0.5;">Modeli kendisi keşfeden fuzzer</li>
+                        <li style="opacity:0.5;">Encoder'ı eviren fuzzer</li>
+                    </ul>
+                    <pre data-id="code"><code class="xml" data-trim data-line-numbers>
+                                                # googleprejectzero/domato/jscript/jscript.txt 
+                                                # https://github.com/googleprojectzero/domato/blob/master/jscript/jscript.txt
+
+                                                <root root=true> = <lines count=1000>
+
+                                                !lineguard try { <line> } catch(e) { }
+
+                                                <fuzzint> = -1
+                                                <fuzzint> = 0
+                                                <fuzzint> = 1000
+                                                <fuzzint> = 1000000
+                                                <fuzzint> = <largeint>
+
+                                                <largeint> = 536870911
+                                                <largeint> = 536870912
+
+                                                <property> = foo
+                                                <property> = prototype
+                                                <property> = length
+                                                <property> = constructor
+                                                <property> = valueOf
+                                                <property> = toJSON
+                                                <property> = caller
+                                                <property> = callee
+                                                <property> = arguments
+                                                <property> = global
+
+                                                <propertyorindex> = <property>
+                                                <propertyorindex> = <fuzzint>
+
+                                                <param> = <var>
+                                                <param> = <var>
+                                                <param> = <var>
+                                                <param> = <var>
+                                                <param> = <var>
+                                                <param> = <var>
+                                                <param> = <fuzzint>
+                                                <param> = true
+                                                <param> = false
+                                                <param> = Infinity
+                                                <param> = 'a'
+                                                <param> = <arg>
+
+                                                <arg> = arg1
+                                                <arg> = arg2
+                                                <arg> = arg3
+                                                <arg> = arg4
+                                                <arg> = arg5
+                                                <arg> = arg6
+                                                <arg> = arg7
+                                                <arg> = arg8
+                                                <arg> = arg9
+
+                                                <propertydescriptorfield> = get: <function>
+                                                <propertydescriptorfield> = set: <function>
+                                                <propertydescriptorfield> = enumerable: <param>
+                                                <propertydescriptorfield> = writable: <param>
+                                                <propertydescriptorfield> = configurable: <param>
+                                                <propertydescriptorfield> = value: <param>
+
+                                                <propertydescriptor> = { <propertydescriptorfield> }
+                                                <propertydescriptor> = { <propertydescriptorfield>, <propertydescriptorfield>, <propertydescriptorfield> }
+                                                <propertydescriptor> = { <propertydescriptorfield>, <propertydescriptorfield>, <propertydescriptorfield> }
+
+                                                <f_num> = <int min=0 max=100>
+
+                                                <optionstring> = '<optionchar>'
+                                                <optionstring> = '<optionchar><optionchar>'
+                                                <optionstring> = '<optionchar><optionchar><optionchar>'
+
+                                                <optionchar> = i
+                                                <optionchar> = g
+                                                <optionchar> = m
+
+                                                <function> = f0
+                                                <function> = f1
+                                                <function> = f2
+                                                <function> = f3
+
+                                                <fuzzstring> = <fuzzstringpart>
+                                                <fuzzstring> = <fuzzstringpart> + <fuzzstringpart>
+                                                <fuzzstring> = <fuzzstringpart> + <fuzzstringpart> + <fuzzstringpart>
+                                                <fuzzstringpart> = Array(<repeatcount>).join(<repeatstr>)
+                                                <repeatcount> = 17
+                                                <repeatcount> = 65
+                                                <repeatcount> = 257
+                                                <repeatcount> = 1025
+                                                <repeatcount> = 4097
+                                                <repeatcount> = 65537
+                                                <repeatstr> = String.fromCharCode(<int min=0 max=127>)
+                                                <repeatstr> = String.fromCharCode(<int min=0 max=127>, <int min=0 max=127>)
+                                                <repeatstr> = String.fromCharCode(<int min=0 max=127>, <int min=0 max=127>, <int min=0 max=127>)
+
+                                                </code></pre>
+                    <p> Javascript grameri (domato fuzz) </p>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li><b>Önceden tanımlı model kullanan fuzzer</b></li>
+                        <li style="opacity:0.5;">Modeli kendisi keşfeden fuzzer</li>
+                        <li style="opacity:0.5;">Encoder'ı eviren fuzzer</li>
+                    </ul>
+                    <pre data-id="code"><code class="html" data-trim data-line-numbers>
+                                                        &lt!-- Kaynak: https://blog.redteam.pl/2020/04/google-chrome-display-locking-fuzzing.html --&gt
+                                                        
+                                                        &lthtml&gt
+                                                        &lthead&gt
+                                                        &ltstyle&gt
+                                                        &lt/style&gt
+                                                        &ltscript&gt
+                                                        function boom1() {
+                                                        var fuzz1 = document.getElementById("fuzz1");
+                                                        var svgfuzz1 = document.getElementById("svgfuzz1");
+                                                        svgfuzz1.addEventListener("DOMSubtreeModified", boom1);
+                                                        fuzz1.setAttribute("rendersubtree", "invisible");
+                                                        fuzz1.src = "x";
+                                                        }
+                                                        function boom2() {
+                                                        fuzz2.setAttribute("rendersubtree", "invisible");
+                                                        document.caretRangeFromPoint(71,6);
+                                                        document.body.appendChild(fuzz1);
+                                                        }
+                                                        &lt/script&gt
+                                                        &lt/head&gt
+                                                        &ltbody&gt
+                                                        &ltsvg id="svgfuzz1" onload="boom1()"  &gt
+                                                        &lta&gt
+                                                        &lttitle id="fuzz2"&gt&lt/title&gt
+                                                        &ltanimate onrepeat="boom2()" repeatDur="indefinite" dur="1"/&gt
+                                                        &lt/svg&gt
+                                                        &lta&gt
+                                                        &ltaudio id="fuzz1"  controls="controls"  &gt
+                                                        &lt/audio&gt
+                                                        &lt/body&gt
+                                                        &lt/html&gt
+
+                                                </code></pre>
+                    <p> Üretilen girdi </p>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li><b>Önceden tanımlı model kullanan fuzzer</b></li>
+                        <li style="opacity:0.5;">Modeli kendisi keşfeden fuzzer</li>
+                        <li style="opacity:0.5;">Encoder'ı eviren fuzzer</li>
+                    </ul>
+                    <pre data-id="code"><code class="hex" data-trim data-line-numbers>
+                                                ==426180==ERROR: AddressSanitizer: heap-use-after-free on address 0x1218d6e37560 at pc 0x7ff951ca7e53 bp 0x00ebfd9f78e0 sp 0x00ebfd9f7928
+                                                READ of size 8 at 0x1218d6e37560 thread T0
+                                                    #0 0x7ff951ca7e52 in blink::PaintLayer::CommonAncestor(class blink::PaintLayer const *) const C:\b\s\w\ir\cache\builder\src\third_party\blink\renderer\core\paint\paint_layer.cc:3551:1
+                                                    #1 0x7ff95525eac9 in blink::CompositingInputsRoot::Update(class blink::PaintLayer *) C:\b\s\w\ir\cache\builder\src\third_party\blink\renderer\core\paint\compositing\compositing_inputs_root.cc:24:44
+                                                    ...
+
+                                                </code></pre>
+                    <p> Use-after-free! </p>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li><b>Önceden tanımlı model kullanan fuzzer</b></li>
+                        <li style="opacity:0.5;">Modeli kendisi keşfeden fuzzer</li>
+                        <li style="opacity:0.5;">Encoder'ı eviren fuzzer</li>
+                    </ul>
+                    <pre data-id="code"><code class="hex" data-trim data-line-numbers>
+                                                ==426180==ERROR: AddressSanitizer: heap-use-after-free on address 0x1218d6e37560 at pc 0x7ff951ca7e53 bp 0x00ebfd9f78e0 sp 0x00ebfd9f7928
+                                                READ of size 8 at 0x1218d6e37560 thread T0
+                                                    #0 0x7ff951ca7e52 in blink::PaintLayer::CommonAncestor(class blink::PaintLayer const *) const C:\b\s\w\ir\cache\builder\src\third_party\blink\renderer\core\paint\paint_layer.cc:3551:1
+                                                    #1 0x7ff95525eac9 in blink::CompositingInputsRoot::Update(class blink::PaintLayer *) C:\b\s\w\ir\cache\builder\src\third_party\blink\renderer\core\paint\compositing\compositing_inputs_root.cc:24:44
+                                                    ...
+
+                                                </code></pre>
+                    <p> Use-after-free! </p>
+                    <q> Congrats! The Panel decided to reward $5.000 for this report! </q>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Önceden tanımlı model kullanan fuzzer</li>
+                        <li><b>Modeli kendisi keşfeden fuzzer</b></li>
+                        <li style="opacity:0.5;">Encoder'ı eviren fuzzer</li>
+                    </ul>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Önceden tanımlı model kullanan fuzzer</li>
+                        <li><b>Modeli kendisi keşfeden fuzzer</b></li>
+                        <ul>
+                            <li> Corpus ve fuzzing kapsam geribildirimlerine göre bir model üretmek </li>
+                        </ul>
+                        <li style="opacity:0.5;">Encoder'ı eviren fuzzer</li>
+                    </ul>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Önceden tanımlı model kullanan fuzzer</li>
+                        <li style="opacity:0.5;">Modeli kendisi keşfeden fuzzer</li>
+                        <li><b>Encoder'ı eviren fuzzer</b></li>
+                    </ul>
+                    <aside class="notes">
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Model (dilbilgisi) tabanlı girdi üretme yöntemleri</h3>
+                    <p><em>Girdi formatından haberdar</em></p>
+                    <ul>
+                        <li style="opacity:0.5;">Önceden tanımlı model kullanan fuzzer</li>
+                        <li style="opacity:0.5;">Modeli kendisi keşfeden fuzzer</li>
+                        <li><b>Encoder'ı eviren fuzzer</b></li>
+                        <ul>
+                            <li> <b> Ör: </b> Girdiyi değil de, geçerli mp3 dosyaları üreten bir encoder programını evirmek ve bu mutant encoder ile mutant mp3 dosyaları üretmek </li>
+                        </ul>
+                    </ul>
+                    <aside class="notes">
+                        MutaGEN böyle yapıyormuş
+                    </aside>
+                </section>
+            </section>
+            <section>
+                <section>
+                    <h2> Hata/Çökme tespit teknikleri </h2>
+                    <p><em>Bug oracles</em></p>
+                </section>
+                <section class="no-toc-progress">
+                    <h3>Geleneksel hata tespit yöntemleri</h3>
+                    <ul>
+                        <li>Sinyaller (SIGABRT, SIGSEGV vs.)</li>
+                    </ul>
+                    <aside class="notes">
+                        peki ya buffer overflow olduysa ama program çökmediyse? sanitizerlar devrede!
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Gelişmiş hata tespit yöntemleri</h3>
+                    <ul>
+                        <li>Sanitizer'lar</li>
+                    </ul>
+                    <aside class="notes">
+                        peki ya buffer overflow olduysa ama program çökmediyse? sanitizerlar devrede!
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Gelişmiş hata tespit yöntemleri</h3>
+                    <ul>
+                        <li>Sanitizer'lar</li>
+                        <ul>
+                            <li>Address Sanitizer (ASan) + Leak Sanitizer (LSan)</li>
+                            <li>Undefined Behavior Sanitizer (UBSan)</li>
+                            <li>Memory Sanitizer (MSan)</li>
+                            <li>Thread Sanitizer (TSan)</li>
+                            <li>Hardware-Assisted Address Sanitizer (HWASAN)</li>
+                            <br>
+                            <li>Kernel Address Sanitizer (KASAN)</li>
+                            <li>Kernel Memory Sanitizer (KMSAN)</li>
+                            <li>Kernel Concurrency Sanitizer (KCSAN)</li>
+                        </ul>
+                    </ul>
+                        <img src="assets/asan.jpg" width="60%">
+                        <!-- https://dev.to/loderunner/writing-safer-c-with-clang-address-sanitizer -->
+                    <aside class="notes">
+                        msan: uninitialized memory <br> asan: ASan employs a shadow memory that allows each memory address to be quickly checked for validity before it is dereferenced, which allows it to detect many (but not all) unsafe memory accesses, evenif they would not crash the original program <br> tsan: detect data races
+
+                    </aside>
+                </section>
+                <section data-auto-animate class="no-toc-progress">
+                    <h3>Gelişmiş hata tespit yöntemleri</h3>
+                    <ul>
+                        <li>Sanitizer'lar</li>
+                        <ul>
+                            <li>Address Sanitizer (ASan) + Leak Sanitizer (LSan)</li>
+                            <li>Undefined Behavior Sanitizer (UBSan)</li>
+                            <li>Memory Sanitizer (MSan)</li>
+                            <li>Thread Sanitizer (TSan)</li>
+                            <li>Hardware-Assisted Address Sanitizer (HWASAN)</li>
+                            <br>
+                            <li>Kernel Address Sanitizer (KASAN)</li>
+                            <li>Kernel Memory Sanitizer (KMSAN)</li>
+                            <li>Kernel Concurrency Sanitizer (KCSAN)</li>
+                        </ul>
+                        <li>Control Flow Integrity (CFI) </li>
+                    </ul>
+                    <aside class="notes">
+                        asan: ASan employs a shadow memory that allows each memory address to be quickly checked for validity before it is dereferenced, which allows it to detect many (but not all) unsafe memory accesses, evenif they would not crash the original program <br> msan: uninitialized memory <br> tsan: detect data races cfi clang ve gcc'ye eklendi bile
+                    </aside>
+                </section>
+            </section>
+
+            <!-- Bazı meşhur fuzzerlar-->
+            <section>
+                <section>
+                    <h2>Bazı meşhur fuzzerlar</h2>
+                </section>
+                <section data-background-iframe="https://aflplus.plus" data-background-interactive>
+                    <div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.6); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
+                        <h3>afl++</h3>
+                    </div>
+                </section>
+                <section data-background-iframe="https://www.llvm.org/docs/LibFuzzer.html" data-background-interactive>
+                    <div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.6); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
+                        <h3>libFuzzer</h3>
+                    </div>
+                </section>
+                <section data-background-iframe="https://github.com/google/oss-fuzz" data-background-interactive>
+                    <div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.6); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
+                        <h3>OSS-Fuzz projesi</h3>
+                    </div>
+                </section>
+                <section data-background-iframe="https://github.com/googleprojectzero" data-background-interactive>
+                    <div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.6); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
+                        <h3>winafl, domato</h3>
+                    </div>
+                </section>
+                <section data-background-iframe="https://fuzzing-survey.org" data-background-interactive>
+                    <div style="position: absolute; width: 40%; right: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 5px 25px rgba(0,0,0,0.2); background-color: rgba(0, 0, 0, 0.6); color: #fff; padding: 20px; font-size: 20px; text-align: left;">
+                        <h2>fuzzing-survey.org</h2>
+                        <p>Kaliteli konferanslarda sunulmuş veya github ⭐100+</p>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Revaçtaki fuzzing konuları -->
+            <section>
+                <section>
+                    <h2>Revaçtaki fuzzing konuları</h2>
+                    <ul>
+                            <li>"Emüle et ve fuzzla"</li>
+                            <li>"Bellek kaydı (snapshot) al ve fuzzla""</li>
+                            <li>"Portla ve fuzzla""</li>
+                            <li>"Bazen sembolik çöz bazen fuzzla (concolic)"</li>
+                            <li>Sürekli fuzzlamak - CI (continuous integration)</li>
+                    </ul>
+                </section>
+            </section>
+
+            <!-- Fuzzing'in geleceği -->
+            <section>
+                <section>
+                    <h2>Fuzzing'in geleceği</h2>
+                    <p><em>Bazı başlıklar</em></p>
+                    <ul>
+                            <li>Bağlamdan haberdar(Structure-aware) fuzzlama</li>
+                            <li>Otomatik fuzzer (koşum takımı/harness) üretimi</li>
+                            <li>"Bazen sembolik çöz bazen fuzzla (concolic)"</li>
+                            <li>Çok hedefin fuzzlanmasını az çekirdeğe ölçekleme</li>
+                    </ul>
+                    <aside class="notes">
+                    <q>"Structure-aware fuzzing is one of the "next big things" in program state exploration and vulnerability discovery. Probably as big as coverage-guided fuzzing has been since the early 2000s." - libFuzzer</q>
+                    <br>
+                    <br>
+                    <br>
+                    <q>snapshot fuzzing will be explored more to make it easier to harness nasty software (see the recent discussions around sudo etc.) 
+                    <br>
+                    <br> 
+                   treating (property-based) unit tests as fuzz targets. Gives you lots of targets-per-project to fuzz, with structured input and good detection of non-crashing errors (eg information leaks, semantic errors,...), meaning you find heaps of bugs. And the same tests can be targeted by solvers/verifiers, though that's not so mature yet. Open problems in this approach, beyond structure-aware fuzzing and building the tools, are mainly around scheduling of many more targets than cores; workflows for continuous fuzzing and early feedback, and the substantial problem of writing so many harnesses.</q>
+                        </aside>
+                </section>
+            </section>
+
+
+            <!-- Yararlı linkler -->
+            <section>
+                <section>
+                    <h2>Yararlı linkler</h2>
+                    <ul>
+                            <li> Teorik + Pratik: <a href="fuzzingbook.org"> fuzzingbook.org  </a> </li>
+                            <li> Genel bakış: <a href="https://ieeexplore.ieee.org/document/8863940"> https://ieeexplore.ieee.org/document/8863940  </a> </li>
+                            <li> Pratik: <a href="https://github.com/google/fuzzing"> https://github.com/google/fuzzing  </a> </li>
+                            <li> Bazı taktikler: <a href="https://j00ru.vexillium.org/slides/2016/blackhat.pdf"> https://j00ru.vexillium.org/slides/2016/blackhat.pdf  </a> </li>
+                            <li> "Awesome fuzzing" kanalı: <a href="https://discord.com/invite/gCraWct"> https://discord.com/invite/gCraWct  </a> </li>
+                            <li> Üstad: <a href="https://twitter.com/gamozolabs"> https://twitter.com/gamozolabs  </a> </li>
+                </section>
+            </section>
+
+            <section data-state="no-toc-progress" data-background-color="black">
+                    <h1>Soru cevap</h1>
+            </section>
+
+            </div>
+
+            </div>
+
+            <script src="dist/reveal.js"></script>
+            <script src="plugin/zoom/zoom.js"></script>
+            <script src="plugin/notes/notes.js"></script>
+            <script src="plugin/search/search.js"></script>
+            <script src="plugin/markdown/markdown.js"></script>
+            <script src="plugin/highlight/highlight.js"></script>
+            <script>
+                // Also available as an ES module, see:
+                			// https://revealjs.com/initialization/
+                			Reveal.initialize({
+                				controls: true,
+                				progress: true,
+                				center: true,
+                				hash: true,
+                
+                				// Learn about plugins: https://revealjs.com/plugins/
+                				plugins: [ RevealZoom, RevealNotes, RevealSearch,
+                                                RevealMarkdown, RevealHighlight ],
+                                dependencies: [ 
+                                        { src: 'plugin/toc-progress/toc-progress.js', async:
+                                                        true, callback: function() {
+                                                                        toc_progress.initialize(null,null,'body');
+                                                                        toc_progress.create();
+                                                                    }
+                                                    }
+                                            ]
+                			});
+            </script>
+
+</body>
+
+</html>
